@@ -1,3 +1,65 @@
+<!-- Fork note: this branch (sber-neobrutal) adds a neo-brutalist launcher look and a tested list for Sber SDX-50U4139. -->
+# 🇷🇺 Чистка телевизора Сбер (Салют ТВ) + новый лаунчер
+
+**Этот форк** — [CleanYourTV](https://github.com/Gathin23/cleanyourtv), доведённый под телевизоры **Сбер на StarOS
+(Салют ТВ)**: проверенный список отключения мусора и свой лаунчер в стиле необрутализм — песочный фон, кремовые
+карточки с толстой обводкой и жёсткой тенью, цветные плитки, огромные часы на заставке.
+
+Проверено на **Sber SDX-50U4139** (50", 4K, 2 ГБ, Android 13, плата CVTE `TP.T962D4.PC756` / `at30a6`). Должно
+подойти и другим Сбер‑ТВ на той же плате (43" `at30a6` — см. [его список](examples/sber-salute-tv-at30a6/README.md)).
+
+| Главный экран: макет → телевизор |
+|---|
+| ![Главный экран](examples/sber-sdx-50u4139/screenshots/pair-home.png) |
+
+| Экран «Обои» | Заставка |
+|---|---|
+| ![Обои](examples/sber-sdx-50u4139/screenshots/pair-wallpapers.png) | ![Заставка](examples/sber-sdx-50u4139/screenshots/pair-screensaver.png) |
+
+| Все приложения | Обои‑картинки |
+|---|---|
+| ![Сетка](examples/sber-sdx-50u4139/screenshots/apps-grid.png) | ![Сумерки](examples/sber-sdx-50u4139/screenshots/home-sumerki.png) |
+
+### Что получится
+
+- **Без мусора Сбера:** отключены Звук, SberPrime, «Видео», детская комната, умный дом, опросы, бета, сберовский
+  «YouTube», Салют‑браузер, заставка Сбера, обновления прошивки и ещё ~15 пакетов. Ничего не удаляется — всё
+  возвращается одной командой. Голосовой помощник, HDMI, пульт и AirPlay работают.
+- **+234 МБ свободной памяти**, и StarOS перестаёт сам удалять ваши приложения при нехватке места.
+- **Новый главный экран:** док из любимых приложений с их баннерами, большая карточка приложения в фокусе
+  («Открыть» / «Убрать из дока»), пилюля VPN (Happ) — бирюзовая, когда подключено, часы, остальные приложения ниже.
+- **Обои:** 3 однотонных (Песок, Графит, Камень — рисуются цветом, 0 МБ памяти) и 6 картинок (Рассвет, Сумерки,
+  Холмы, Баухаус, Туман, Терраццо), смена раз в день, свои — просто положить JPG в папку темы.
+- **Заставка:** огромные часы с розовой тенью и дата по‑русски поверх обоев.
+- **Кнопки пульта:** «ТВ» открывает Happ, «RUTUBE» — YouTube (меняется одной строкой в настройках).
+- Шрифты **Unbounded** и **Golos Text** с кириллицей. Лаунчер не ходит в интернет, без рекламы и аналитики.
+
+### Как поставить
+
+Нужен Mac/ПК в той же Wi‑Fi сети и включённая на ТВ **Беспроводная отладка** (Настройки → Для разработчиков).
+Самый простой путь — отдать [PROMPT.md](PROMPT.md) ИИ‑агенту (Claude Code и др.) вместе с этим README:
+он сам подключится, покажет список и спросит перед каждым шагом. Подробности по этому телевизору, ручные
+команды, откат и настройка — в **[инструкции на русском](examples/sber-sdx-50u4139/README.md)**.
+
+Коротко, вручную (из корня репозитория, `<tv ip>` — адрес ТВ в домашней сети):
+
+```bash
+python3 -m venv tools/venv && tools/venv/bin/pip install -r tools/requirements.txt
+TV_HOST=<tv ip> tools/disable.sh examples/sber-sdx-50u4139/debloat.txt
+cd launcher && TV_HOST=<tv ip> STOCK_LAUNCHER=ru.sberdevices.starlauncher INPUT_KEY_SERVICE=1 ./build-and-install.sh && cd ..
+TV_HOST=<tv ip> tools/theme.sh examples/sber-sdx-50u4139
+TV_HOST=<tv ip> tools/venv/bin/python tools/tv.py 'settings put secure screensaver_components com.gathin.tvhome/.ClockDream'
+```
+
+Откатить всё: `TV_HOST=<tv ip> tools/restore.sh examples/sber-sdx-50u4139/debloat.txt ru.sberdevices.starlauncher`.
+
+> Сборка лаунчера требует JDK 17 и Android SDK 34 (`brew install openjdk@17` и
+> `brew install --cask android-commandlinetools`). Код редизайна — ветка `sber-neobrutal`, ключ `neo_style`.
+
+Оригинальный проект и вся документация — ниже, на английском. Спасибо [Gathin23/cleanyourtv](https://github.com/Gathin23/cleanyourtv) (MIT).
+
+---
+
 <p align="center">
   <a href="https://cleanyour.tv"><img src="https://raw.githubusercontent.com/Gathin23/cleanyourtv/main/docs/banner.png" alt="CleanYourTV. Your TV, minus the ads. Strip the bloatware from any Android TV or Google TV over Wi-Fi and replace the ad-filled home screen with a clean launcher that looks like an Apple TV. No root, no cable, nothing uninstalled, and a one-line restore." width="800"></a>
 </p>
