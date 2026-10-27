@@ -206,6 +206,8 @@ public class MainActivity extends Activity implements AppAdapter.TileListener {
     /** vpn_pill: the VPN shown as its own pill (btnVpn) instead of a badge in the network pill. Off with top_menu. */
     private boolean vpnPill;
     private TextView btnVpn;
+    /** neo_style: the card, header pills and bottom strip (NeoHome); null in the usual look. */
+    private NeoHome neoHome;
     /** The VpnBadge pill state btnVpn shows, so a refresh that changes nothing does not restyle it. */
     private int vpnPillState = VpnBadge.PILL_HIDDEN;
     private SpringAnimation springX, springY;
@@ -392,6 +394,7 @@ public class MainActivity extends Activity implements AppAdapter.TileListener {
         density = getResources().getDisplayMetrics().density;
         // config.xml, overlaid by config.json from a pushed theme (see Config and tools/theme.sh).
         Config cfg = Config.load(this);
+        Neo neo = Neo.load(this);
         homeAppKeys = RemoteKeys.parseAppKeys(cfg.appKeys);
         appLibrarySelection = cfg.appLibrarySelection;
         libraryOkOpens = cfg.libraryOkOpens;
@@ -513,7 +516,8 @@ public class MainActivity extends Activity implements AppAdapter.TileListener {
             date.setPadding(0, (int) (4 * density), 0, 0);
         }
         vpnApp = cfg.vpnApp;
-        vpnPill = cfg.vpnPill && !cfg.topMenu;
+        // neo_style keeps the VPN pill beside the gear: the gear's menu has no VPN row.
+        vpnPill = cfg.vpnPill && (!cfg.topMenu || neo.enabled);
         btnVpn = findViewById(R.id.btnVpn);
         moduleCards = cfg.moduleCards;
         hiddenApps = new HashSet<>(cfg.hiddenApps);
@@ -600,6 +604,7 @@ public class MainActivity extends Activity implements AppAdapter.TileListener {
                     AnimationUtils.loadAnimation(this, R.anim.tile_enter), 0.06f));
         }
         adapter = new AppAdapter(this, this, COLUMNS, cfg);
+        adapter.setNeo(neo);
         dockApps = cfg.dockApps;
         fillDockLeavesSlots = !cfg.fillDock;
         Order savedOrder = Order.load(Order.file(this));
@@ -620,7 +625,8 @@ public class MainActivity extends Activity implements AppAdapter.TileListener {
             // Keep the hero below the header when the library is enabled on a short screen,
             // even when the theme requests an extra visible row below the dock.
             int shelfClearance = cfg.appLibrary ? hero.getMeasuredHeight() + (int) (40 * density) : 0;
-            int want = Math.max(shelfClearance, h - dockRow - gridRows - (int) (AppAdapter.BOTTOM_ROOM_DP * density));
+            int want = Math.max(shelfClearance, h - dockRow - gridRows - (int) (AppAdapter.BOTTOM_ROOM_DP * density)
+                    - (neoHome != null ? neoHome.dockLift() : 0));
             // Where the rows cannot fit even at the smallest tile (3 rows with the title on), the title keeps its
             // room above the dock and the last rows run off the bottom instead of the title drawing over the clock.
             if (MainActivity.this.dockRow && cfg.dockTitle && rowsBelowDock > 0) want = Math.max(want, (int) (AppAdapter.TITLE_ROOM_DP * density));
@@ -812,6 +818,26 @@ public class MainActivity extends Activity implements AppAdapter.TileListener {
             }
         }
         if (festive) applyFestiveSkin((TextView) btnInputs, (TextView) btnSettings);
+        if (neo.enabled) {
+            // The card and the tile's own lift mark the focus: no glass highlight and no glow behind the dock.
+            glass.setVisibility(View.GONE);
+            ambient.setVisibility(View.GONE);
+            neoHome = new NeoHome(this, neo, root, (LinearLayout) hero, new NeoHome.Host() {
+                @Override public void openTile(int position) {
+                    RecyclerView.ViewHolder vh = grid.findViewHolderForAdapterPosition(position);
+                    View card = vh == null ? null : vh.itemView.findViewById(R.id.card);
+                    if (card != null) card.performClick();
+                }
+
+                @Override public void removeFromDock(int position) {
+                    MainActivity.this.removeFromDock(position);
+                }
+
+                @Override public void focusTile(int position) {
+                    MainActivity.this.focusTile(Math.max(0, position));
+                }
+            });
+        }
 
         // Hide the glass when focus leaves the tiles.
         getWindow().getDecorView().getViewTreeObserver().addOnGlobalFocusChangeListener((oldF, newF) -> {
@@ -955,6 +981,7 @@ public class MainActivity extends Activity implements AppAdapter.TileListener {
             recreate();
             return;
         }
+        if (neoHome != null) neoHome.refresh();
         restartIdleClock();
         promptsPaused = false;
         if (grid.getAdapter() == null) grid.setAdapter(adapter);   // dropped by onTrimMemory
@@ -1454,6 +1481,18 @@ public class MainActivity extends Activity implements AppAdapter.TileListener {
         refocusAfterLayout(slot);
     }
 
+    /**
+     * neo_style card: takes the dock app at pos out of the dock, as an edit-dock session that drops it would; it goes
+     * to the first place after the dock. Only with fill_dock false, where the dock keeps the size the owner left it.
+     */
+    private void removeFromDock(int pos) {
+        String key = adapter.keyAt(pos);
+        if (key == null || !fillDockLeavesSlots || reordering || !beginReorder()) return;
+        dockInSession.remove(key);
+        endReorder();
+        refocusAfterLayout(Math.max(0, Math.min(pos, adapter.dockFilled() - 1)));
+    }
+
     private void pickUp(int pos) {
         if (pos >= adapter.movableCount()) return;   // the "Default home" tile stays put
         movingKey = adapter.keyAt(pos);
@@ -1628,6 +1667,10 @@ public class MainActivity extends Activity implements AppAdapter.TileListener {
     public void onTileFocused(int position, View card) {
         lastFocused = position;
         lastFocusedKey = adapter.keyAt(position);
+        if (neoHome != null) {
+            int rows = singleRow ? 1 : (adapter.appCount() + COLUMNS - 1) / COLUMNS;
+            neoHome.onRow(singleRow ? 0 : position / COLUMNS, rows);
+        }
         // Focus restored before the first layout (cold start): the tile has no size yet, and the glass
         // would be sized to 2*pad. Run again once the tile is laid out.
         if (card.getWidth() == 0) {
@@ -1792,6 +1835,7 @@ public class MainActivity extends Activity implements AppAdapter.TileListener {
     /** The shelf's text for this dock app: its name and, on the cinematic shelf, "Last opened" and the dots. */
     private void fillHero(int position, String label) {
         heroName.setText(label);
+        if (neoHome != null) neoHome.show(position, adapter.packageAt(position), label);
         if (!cinematic) return;
         updateHeroMeta(position);
         updateHeroDots(position);
@@ -2275,7 +2319,14 @@ public class MainActivity extends Activity implements AppAdapter.TileListener {
                     rtlAppGrid, keyCode == KeyEvent.KEYCODE_DPAD_LEFT);
         }
         if (keyCode == KeyEvent.KEYCODE_DPAD_UP) {
-            if (position < COLUMNS) return false;          // dock row: let focus move to the top bar
+            if (position < COLUMNS) {
+                // neo_style: the card above the dock comes first, then the top bar.
+                if (neoHome != null && heroShown) {
+                    neoHome.focusCard();
+                    return true;
+                }
+                return false;                              // dock row: let focus move to the top bar
+            }
             target = position - COLUMNS;
         } else {
             int lastRowStart = ((count - 1) / COLUMNS) * COLUMNS;
@@ -2830,6 +2881,11 @@ public class MainActivity extends Activity implements AppAdapter.TileListener {
         if (state != vpnPillState) {
             vpnPillState = state;
             boolean up = state == VpnBadge.PILL_UP;
+            if (neoHome != null) {
+                neoHome.styleVpn(btnVpn, up);
+                btnVpn.setVisibility(View.VISIBLE);
+                return;
+            }
             // Dark ink on green, white on red, focused or not: the white focus ring is drawn by the background.
             ColorStateList ink = ColorStateList.valueOf(up ? VpnBadge.INK : VpnBadge.INK_OFF);
             btnVpn.setText(up ? R.string.vpn : R.string.vpn_off);
@@ -3276,6 +3332,9 @@ public class MainActivity extends Activity implements AppAdapter.TileListener {
             status.setVisibility(View.VISIBLE);
         }
         addInputRow(rows, popup, R.drawable.ic_swap_vert, getString(R.string.reorder), -1, this::toggleReorder);
+        // neo_style: the Wallpapers screen one row away, not behind Launcher settings.
+        if (neoHome != null) addInputRow(rows, popup, R.drawable.ic_picture, getString(R.string.neo_wallpapers), -1,
+                () -> startActivity(new Intent(this, NeoWallpapersActivity.class)));
         if (launcherSettingsButton) {
             addInputRow(rows, popup, R.drawable.ic_home_settings_pill, getString(R.string.launcher_settings), -1,
                     () -> startActivityForResult(new Intent(this, LauncherSettingsActivity.class), LAUNCHER_SETTINGS_REQUEST));

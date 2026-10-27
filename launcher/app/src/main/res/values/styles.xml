@@ -35,6 +35,48 @@
         <item name="android:drawablePadding">0dp</item>
     </style>
 
+    <!-- neo_style buttons and pills: ink text on a NeoBox pill set in code (which adds the shadow's room). -->
+    <style name="NeoButton">
+        <item name="android:layout_width">wrap_content</item>
+        <item name="android:layout_height">wrap_content</item>
+        <item name="android:minHeight">46dp</item>
+        <item name="android:paddingStart">22dp</item>
+        <item name="android:paddingEnd">24dp</item>
+        <item name="android:gravity">center</item>
+        <item name="android:singleLine">true</item>
+        <item name="android:textColor">#FF141414</item>
+        <item name="android:textSize">16sp</item>
+        <item name="android:fontFamily">@string/font_display_bold</item>
+        <item name="android:drawablePadding">10dp</item>
+        <item name="android:focusable">true</item>
+        <item name="android:clickable">true</item>
+    </style>
+
+    <style name="NeoPill">
+        <item name="android:layout_width">wrap_content</item>
+        <item name="android:layout_height">wrap_content</item>
+        <item name="android:minHeight">34dp</item>
+        <item name="android:paddingStart">16dp</item>
+        <item name="android:paddingEnd">16dp</item>
+        <item name="android:gravity">center</item>
+        <item name="android:singleLine">true</item>
+        <item name="android:textColor">#FF141414</item>
+        <item name="android:textSize">14sp</item>
+        <item name="android:fontFamily">@string/font_bold</item>
+    </style>
+
+    <!-- The neo screensaver's clock; dream_clock_neo stacks three of them for the hard shadows. -->
+    <style name="NeoClock">
+        <item name="android:layout_width">wrap_content</item>
+        <item name="android:layout_height">wrap_content</item>
+        <item name="android:format12Hour">h:mm</item>
+        <item name="android:format24Hour">HH:mm</item>
+        <item name="android:textSize">150sp</item>
+        <item name="android:fontFamily">@string/font_display</item>
+        <item name="android:letterSpacing">-0.03</item>
+        <item name="android:includeFontPadding">false</item>
+    </style>
+
     <style name="SettingsRow">
         <item name="android:layout_width">match_parent</item>
         <item name="android:layout_height">52dp</item>

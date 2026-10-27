@@ -218,6 +218,8 @@ public class AppAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder> {
     private final boolean uniformTiles;
     /** Packages drawn from their icon and name even when they have a banner (config.xml icon_tiles). */
     private final Set<String> iconTiles;
+    /** neo_style: flat coloured icon tiles with an outline and a hard shadow, the name in an ink pill; null otherwise. */
+    private Neo neo;
     private final List<Entry> items = new ArrayList<>();
 
     AppAdapter(Context ctx, TileListener listener, int dockSize, Config cfg) {
@@ -249,6 +251,11 @@ public class AppAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder> {
         // Tiles keep their identity across reload(), so a focused tile stays on its app instead of
         // its view being rebound to whatever app now sits in that slot.
         setHasStableIds(true);
+    }
+
+    /** neo_style tiles; call before the adapter is attached, so every holder is made in that style. */
+    void setNeo(Neo neo) {
+        this.neo = neo != null && neo.enabled ? neo : null;
     }
 
     /**
@@ -399,6 +406,13 @@ public class AppAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder> {
         if (viewType == 1) {
             View row = LayoutInflater.from(ctx).inflate(R.layout.row_app_library, parent, false);
             View button = row.findViewById(R.id.btnLibrary);
+            if (neo != null) {
+                // The library pill in the neo look: a cream pill with ink text, readable on every wallpaper.
+                TextView pill = (TextView) button;
+                pill.setTextColor(Neo.INK);
+                pill.setCompoundDrawableTintList(android.content.res.ColorStateList.valueOf(Neo.INK));
+                NeoBox.pill(pill, Neo.CREAM, ctx.getResources().getDisplayMetrics().density, true);
+            }
             button.setOnClickListener(v -> listener.onLibraryRequested());
             button.setOnFocusChangeListener((v, focused) -> { if (focused) listener.onLibraryFocused(); });
             button.setOnKeyListener((v, key, event) -> {
@@ -432,7 +446,41 @@ public class AppAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder> {
         name.setLayoutParams(nameLp);
         // A sideways row would stretch a match_parent item across the whole screen: give it a grid column's width.
         if (singleRow) v.getLayoutParams().width = inner / dockSize;
-        if (uniformTiles) {
+        if (neo != null) {
+            // Neo tile: the app's banner inside an ink outline, with a hard shadow that grows on focus. An app without
+            // a banner gets its icon centred on the tile's flat colour instead.
+            float stroke = 3 * density, radius = 14 * density;
+            NeoBox box = NeoBox.applyTo(card, new NeoBox(Neo.CREAM, radius, stroke, 4 * density, 9 * density));
+            int room = Math.round(box.reserve());
+            int in = Math.round(stroke);
+            card.setPadding(card.getPaddingLeft() + in, card.getPaddingTop() + in, card.getPaddingRight() + in,
+                    card.getPaddingBottom() + in);
+            View banner = v.findViewById(R.id.banner);
+            float bannerRadius = radius - stroke;
+            banner.setOutlineProvider(new ViewOutlineProvider() {
+                @Override
+                public void getOutline(View view, Outline outline) {
+                    outline.setRoundRect(0, 0, view.getWidth(), view.getHeight(), bannerRadius);
+                }
+            });
+            banner.setClipToOutline(true);
+            View icon = v.findViewById(R.id.icon);
+            FrameLayout.LayoutParams iconLp = (FrameLayout.LayoutParams) icon.getLayoutParams();
+            iconLp.width = iconLp.height = Math.round((h - room) * 0.62f);
+            iconLp.bottomMargin = 0;
+            icon.setLayoutParams(iconLp);
+            // The name as an ink pill under the tile, only as wide as the name.
+            TextView label = (TextView) name;
+            nameLp.width = ViewGroup.LayoutParams.WRAP_CONTENT;
+            nameLp.height = Math.round(28 * density);
+            nameLp.topMargin = h + Math.round(6 * density);
+            name.setLayoutParams(nameLp);
+            int pad = Math.round(14 * density);
+            label.setPadding(pad, 0, pad, 0);
+            label.setTextColor(Neo.CREAM);
+            label.setTypeface(UiFont.get(ctx, R.string.font_bold));
+            name.setBackground(new NeoBox(Neo.INK, -1, 0, 0));
+        } else if (uniformTiles) {
             // tvOS-style tile: a large centred mark, no caption inside the card.
             View icon = v.findViewById(R.id.icon);
             FrameLayout.LayoutParams iconLp = (FrameLayout.LayoutParams) icon.getLayoutParams();
@@ -450,7 +498,11 @@ public class AppAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder> {
             View label = v.findViewById(R.id.label);
             label.setPadding(label.getPaddingLeft(), label.getPaddingTop(), label.getPaddingRight(), Math.round(4f * density));
         }
-        return new Holder(v, listener, animations, advancedEffects, reducedMotion, restNameAlpha, focusOvershoot);
+        Holder holder = new Holder(v, listener, animations, advancedEffects, reducedMotion, restNameAlpha, focusOvershoot,
+                neo != null);
+        // The shadow sits inside the card, so it must not be clipped to a rounded outline the size of the card.
+        if (neo != null) holder.card.setClipToOutline(false);
+        return holder;
     }
 
     @Override
@@ -475,19 +527,28 @@ public class AppAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder> {
         // The dock has no labels, unless always_show_names asks for them (DockDecoration then makes room in the band).
         // In a single row every tile is the dock's kind: the big title above names it.
         boolean dockKind = dockRow && (singleRow || position < dockSize);
-        h.name.setVisibility(dockKind && restNameAlpha == 0f ? View.INVISIBLE : View.VISIBLE);
+        // Neo: every tile, the dock's too, shows its name pill while focused.
+        h.name.setVisibility(dockKind && restNameAlpha == 0f && neo == null ? View.INVISIBLE : View.VISIBLE);
         boolean focused = h.card.isFocused();   // a rebind after reload() can hit the focused tile
         h.name.setAlpha(focused ? 1f : restNameAlpha);
         h.card.setScaleX(focused && animations ? focusScale() : 1f);
         h.card.setScaleY(focused && animations ? focusScale() : 1f);
-        h.card.setTranslationY(focused && advancedEffects ? -4f * ctx.getResources().getDisplayMetrics().density : 0f);
+        float density = ctx.getResources().getDisplayMetrics().density;
+        // Neo tiles rise up and left on focus (Holder), the others a little up with advanced effects.
+        h.card.setTranslationX(focused && neo != null ? -5f * density : 0f);
+        h.card.setTranslationY(focused && neo != null ? -5f * density : focused && advancedEffects ? -4f * density : 0f);
         h.card.setTranslationZ(focused && advancedEffects ? 8f * ctx.getResources().getDisplayMetrics().density : 0f);
         h.banner.setScaleX(focused && advancedEffects ? 1.035f : 1f);
         h.banner.setScaleY(focused && advancedEffects ? 1.035f : 1f);
         // A fully opaque banner covers the whole card (centerCrop), so the card's own fill under it is drawn for
         // nothing on every frame; keep it under banners with transparent parts and under icon tiles.
-        h.card.setBackground(e.banner != null && e.banner.getOpacity() == PixelFormat.OPAQUE ? null : h.cardBackground);
-        if (uniformTiles && e.banner == null) {
+        if (neo != null) {
+            // The card's NeoBox stays; only its colour follows the tile's place.
+            ((NeoBox) h.cardBackground).setColor(neo.tileColor(position));
+        } else {
+            h.card.setBackground(e.banner != null && e.banner.getOpacity() == PixelFormat.OPAQUE ? null : h.cardBackground);
+        }
+        if (uniformTiles && neo == null && e.banner == null) {
             if (e.backdrop == null) e.backdrop = backdrop(e.icon, ambientColorAt(position));
             h.card.setBackground(new GradientDrawable(GradientDrawable.Orientation.TOP_BOTTOM, e.backdrop));
         }
@@ -502,7 +563,7 @@ public class AppAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder> {
             h.icon.setImageDrawable(e.icon);
             h.icon.setVisibility(View.VISIBLE);
             h.label.setText(e.label);
-            h.label.setVisibility(uniformTiles ? View.GONE : View.VISIBLE);
+            h.label.setVisibility(uniformTiles || neo != null ? View.GONE : View.VISIBLE);
         }
         h.card.setOnClickListener(v -> launch(e));
         h.card.setOnLongClickListener(v -> {
@@ -543,7 +604,7 @@ public class AppAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder> {
         }
         try {
             ctx.startActivity(i);
-            if (cinematic) LastOpened.record(ctx, e.pkg);
+            if (cinematic || neo != null) LastOpened.record(ctx, e.pkg);   // the neo card shows it too
             if (advancedEffects && !reducedMotion && ctx instanceof Activity) {
                 ((Activity) ctx).overridePendingTransition(R.anim.app_open_enter, R.anim.app_open_exit);
             }
@@ -666,8 +727,12 @@ public class AppAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder> {
     }
 
     float focusScale() {
-        return !animations ? 1f : advancedEffects ? 1.12f : 1.10f;
+        return !animations ? 1f : neo != null ? NEO_FOCUS_SCALE : advancedEffects ? 1.12f : 1.10f;
     }
+
+    /** Neo tiles grow only a little: the lift and the larger shadow already mark the focus. */
+    static final float NEO_FOCUS_SCALE = 1.05f;
+
 
     /** A vivid colour sampled from the app's banner (or icon), cached per entry; a card's accent when it set one. */
     int ambientColorAt(int position) {
@@ -887,9 +952,11 @@ public class AppAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder> {
         /** Alpha of the name while the tile is not focused (always_show_names). */
         final float restNameAlpha;
         final boolean overshoot;
+        /** neo_style: a smaller zoom, the NeoBox lifts the tile itself. */
+        final boolean neo;
 
         Holder(View v, TileListener listener, boolean animations, boolean advancedEffects,
-               boolean reducedMotion, float restNameAlpha, boolean overshoot) {
+               boolean reducedMotion, float restNameAlpha, boolean overshoot, boolean neo) {
             super(v);
             card = v.findViewById(R.id.card);
             cardBackground = card.getBackground();
@@ -902,6 +969,7 @@ public class AppAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder> {
             this.reducedMotion = reducedMotion;
             this.restNameAlpha = restNameAlpha;
             this.overshoot = overshoot;
+            this.neo = neo;
 
             final float density = v.getResources().getDisplayMetrics().density;
             card.setOutlineProvider(new ViewOutlineProvider() {
@@ -925,12 +993,15 @@ public class AppAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder> {
                 view.animate().cancel();
                 banner.animate().cancel();
                 name.animate().cancel();
-                float scale = !animations ? 1f : advancedEffects ? 1.12f : 1.10f;
+                float scale = !animations ? 1f : neo ? NEO_FOCUS_SCALE : advancedEffects ? 1.12f : 1.10f;
                 float s = focused ? scale : 1f;
+                // Neo: the tile rises up and left by as much as its shadow grows, so the shadow seems to stay on the floor.
+                float lift = neo && focused ? -5f * density : 0f;
                 if (!animations) {
                     view.setScaleX(1f);
                     view.setScaleY(1f);
-                    view.setTranslationY(0f);
+                    view.setTranslationX(lift);
+                    view.setTranslationY(lift);
                     view.setTranslationZ(0f);
                     banner.setScaleX(1f);
                     banner.setScaleY(1f);
@@ -939,8 +1010,8 @@ public class AppAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder> {
                 } else if (reducedMotion) {
                     // A short zoom with no hardware layer: building a layer for so short an animation costs more
                     // frames than it saves. The name just appears instead of fading.
-                    view.animate().scaleX(s).scaleY(s)
-                            .translationY(focused && advancedEffects ? -4f * density : 0f)
+                    view.animate().scaleX(s).scaleY(s).translationX(lift)
+                            .translationY(neo ? lift : focused && advancedEffects ? -4f * density : 0f)
                             .translationZ(focused && advancedEffects ? 8f * density : 0f)
                             .setDuration(focused ? Motion.REDUCED_MS : 60)
                             .setInterpolator(new DecelerateInterpolator())
@@ -951,8 +1022,8 @@ public class AppAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder> {
                     // Only on focus: snapping it back to -6dp while it fades out would jump it up over the tile.
                     if (focused) name.setTranslationY(density * 4f);
                 } else {
-                    view.animate().scaleX(s).scaleY(s)
-                            .translationY(focused && advancedEffects ? -4f * density : 0f)
+                    view.animate().scaleX(s).scaleY(s).translationX(lift)
+                            .translationY(neo ? lift : focused && advancedEffects ? -4f * density : 0f)
                             .translationZ(focused && advancedEffects ? 8f * density : 0f)
                             .setDuration(advancedEffects ? (focused ? 220 : 170) : (focused ? 260 : 180))
                             .setInterpolator(focused && !overshoot ? new DecelerateInterpolator(1.5f)

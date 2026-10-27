@@ -1,0 +1,67 @@
+{
+  "hidden_apps": [
+    "com.cvte.fac.menu",
+    "com.stb.factorymenu",
+    "ru.sberdevices.webview",
+    "ru.sberdevices.starcleaner",
+    "ru.sberdevices.starmarket",
+    "ru.sberdevices.starprofile",
+    "ru.sberdevices.parentcontrol",
+    "ru.sberdevices.starkidsroom.prod",
+    "com.sberbank.settings",
+    "com.android.tv.settings"
+  ],
+  "live_tv_package": "",
+  "app_library": true,
+  "app_labels": [
+    "ru.sberdevices.starlauncher=Салют ТВ",
+    "ru.sberdevices.starmarket=Каталог Сбера",
+    "ru.sberdevices.settings=Центр управления"
+  ],
+  "dock_apps": [
+    "com.google.android.youtube.tv",
+    "ru.kinopoisk.tv",
+    "ru.more.play",
+    "su.afk.yummy.tv",
+    "com.yandex.browser.tv"
+  ],
+  "fill_dock": false,
+  "columns": 5,
+  "rows_below_dock": 0,
+  "dock_title": true,
+  "dock_band": false,
+  "ambient_glow": false,
+  "show_greeting": false,
+  "top_menu": true,
+  "app_keys": [
+    "KEYCODE_F6:su.happ.proxyutility",
+    "KEYCODE_F5:com.google.android.youtube.tv"
+  ],
+  "vpn_app": "su.happ.proxyutility",
+  "vpn_pill": true,
+  "background_color": "#EEE8DC",
+  "wallpaper": false,
+  "home_idle_clock_minutes": 10,
+  "clock_wallpaper": true,
+  "clock_wallpaper_dim": 0,
+  "clock_glow": false,
+  "neo_style": true,
+  "neo_avatar": "М",
+  "neo_tile_colors": ["#3A5BFF", "#FF5FA2", "#FFD23F", "#B69CFF", "#2EC4B6", "#FF6B35", "#FFF7EA"],
+  "neo_wallpapers": [
+    "Песок|#EEE8DC|Тёплый бежевый, однотонный",
+    "Графит|#2C2B30|Тёмно-серый, для вечера",
+    "Камень|#D6D3CC|Светло-серый, однотонный"
+  ],
+  "neo_categories": [
+    "com.google.android.youtube.tv=Видео",
+    "ru.kinopoisk.tv=Кино и сериалы",
+    "ru.more.play=Кино и сериалы",
+    "su.afk.yummy.tv=Аниме",
+    "com.yandex.browser.tv=Интернет",
+    "su.happ.proxyutility=VPN",
+    "ru.rutube.app=Видео",
+    "org.videolan.vlc=Плеер",
+    "ru.vk.store.tv=Магазин приложений"
+  ]
+}

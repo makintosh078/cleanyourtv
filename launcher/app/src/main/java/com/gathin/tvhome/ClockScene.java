@@ -15,12 +15,16 @@ import android.os.Looper;
 import android.util.DisplayMetrics;
 import android.view.View;
 import android.widget.ImageView;
+import android.widget.TextView;
 
 import java.io.File;
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
+import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Random;
 import java.util.Set;
@@ -61,12 +65,15 @@ final class ClockScene {
     private String order;
     private Map<String, Set<String>> moods;
     private String latitude, longitude;
+    /** neo_style (dream_clock_neo): the date pill, null in the plain layout. The clock then stays low on the left. */
+    private final TextView neoDate;
 
     private final Runnable tick = new Runnable() {
         @Override
         public void run() {
             moveClock();
             shiftGlow();
+            updateDate();
             advanceWallpaper();
             handler.postDelayed(this, MOVE_MS);
         }
@@ -76,6 +83,7 @@ final class ClockScene {
     ClockScene(View root) {
         content = root.findViewById(R.id.dreamContent);
         ambient = root.findViewById(R.id.dreamAmbient);
+        neoDate = root.findViewById(R.id.neoDate);
         glow = new GradientDrawable();
         glow.setGradientType(GradientDrawable.RADIAL_GRADIENT);
         ambient.setBackground(glow);
@@ -83,6 +91,29 @@ final class ClockScene {
                 glow.setGradientRadius((r - l) * 0.55f));
         colorIndex = random.nextInt(PALETTE.length);
         setGlow(PALETTE[colorIndex]);
+        if (neoDate != null) {
+            // No glow in the neo look: the wallpaper's colour (or a picture) is the background.
+            wallpaperShown = true;
+            ambient.setBackground(null);
+            NeoBox.pill(neoDate, Neo.CLOCK_CYAN, root.getResources().getDisplayMetrics().density, false);
+            updateDate();
+        }
+    }
+
+    /** The layout for this look: dream_clock_neo in neo_style, else the plain one. */
+    static int layout(Context ctx) {
+        return Neo.load(ctx).enabled ? R.layout.dream_clock_neo : R.layout.dream_clock;
+    }
+
+    /** "Вторник, 27 октября": the weekday and date in the launcher's language, capitalised. */
+    private void updateDate() {
+        if (neoDate == null) return;
+        Locale locale = neoDate.getResources().getConfiguration().getLocales().get(0);
+        neoDate.setText(capitalized(LocalDate.now().format(DateTimeFormatter.ofPattern("EEEE, d MMMM", locale)), locale));
+    }
+
+    static String capitalized(String text, Locale locale) {
+        return text.isEmpty() ? text : text.substring(0, 1).toUpperCase(locale) + text.substring(1);
     }
 
     void start() {
@@ -116,7 +147,28 @@ final class ClockScene {
         } catch (RuntimeException e) {
             return;
         }
-        if (!cfg.clockWallpaper) {
+        if (neoDate != null) {
+            // "Show as screensaver" on: the wallpaper's colour behind the clock and its name in the pill; off: ink.
+            Neo neo = Neo.load(ctx);
+            boolean shown = neo.clockWallpaper(ctx);
+            Neo.Wallpaper w = neo.current(ctx);
+            View root = (View) content.getParent();
+            int background = shown ? w.color : Neo.INK;
+            root.setBackgroundColor(background);
+            // The clock sits low on the left, so a picture's bottom decides whether it is drawn light or dark.
+            if (!Neo.isDark(shown && w.image != null ? Neo.bottomColor(w) : background)) {
+                // Cream on Sand or Stone would hardly show: an ink clock over its pink shadow, the ink one dropped.
+                ((TextView) root.findViewById(R.id.neoClockFront)).setTextColor(Neo.INK);
+                root.findViewById(R.id.neoClockBack).setVisibility(View.INVISIBLE);
+            }
+            TextView pill = root.findViewById(R.id.neoClockWallpaper);
+            pill.setText(ctx.getString(R.string.neo_wallpaper_pill, w.name));
+            pill.setVisibility(shown ? View.VISIBLE : View.GONE);
+            NeoBox.pill(pill, Neo.CREAM, ctx.getResources().getDisplayMetrics().density, false);
+            // A picture picked from the theme's collection still shows over the colour, as on Home.
+            if (!shown || cfg.wallpapers.isEmpty()) return;
+            wallpaperShown = false;
+        } else if (!cfg.clockWallpaper) {
             // clock_glow false: plain black behind the clock (OLED); the clock itself still moves every minute.
             if (!cfg.clockGlow) {
                 wallpaperShown = true;   // also stops the glow's colour cycle
@@ -232,6 +284,14 @@ final class ClockScene {
     /** A random spot that keeps the whole clock on screen, with the glow centred behind it. */
     private void placeClock() {
         View parent = (View) content.getParent();
+        if (neoDate != null) {
+            // Neo: low on the left as in the mockup, a few dp off each minute so the panel does not keep one image.
+            float d = parent.getResources().getDisplayMetrics().density;
+            android.view.ViewGroup.MarginLayoutParams lp = (android.view.ViewGroup.MarginLayoutParams) content.getLayoutParams();
+            content.setX(lp.getMarginStart() + (random.nextFloat() * 2 - 1) * 24 * d);
+            content.setY(parent.getHeight() - content.getHeight() - lp.bottomMargin + (random.nextFloat() * 2 - 1) * 16 * d);
+            return;
+        }
         int maxX = Math.max(0, parent.getWidth() - content.getWidth());
         int maxY = Math.max(0, parent.getHeight() - content.getHeight());
         float x = maxX * (0.1f + 0.8f * random.nextFloat());

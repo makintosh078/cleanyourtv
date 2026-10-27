@@ -1,0 +1,79 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Screensaver in neo_style (ClockScene): a huge cream clock with hard pink and ink shadows and a tilted cyan date
+     pill, low on the left over the wallpaper's colour, with the wallpaper's name at the bottom right. The shadows are
+     the same clock drawn twice behind it, offset; no blur. The ids ClockScene needs are the plain layout's. -->
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/neoClockRoot"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="#FF141414"
+    android:clipChildren="false">
+
+    <!-- A picture wallpaper from the theme goes here; a colour one is the root's background. -->
+    <ImageView
+        android:id="@+id/dreamAmbient"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:scaleType="centerCrop"
+        android:importantForAccessibility="no" />
+
+    <LinearLayout
+        android:id="@+id/dreamContent"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_gravity="bottom|start"
+        android:layout_marginStart="52dp"
+        android:layout_marginBottom="56dp"
+        android:orientation="vertical"
+        android:clipChildren="false"
+        android:clipToPadding="false">
+
+        <FrameLayout
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:paddingEnd="10dp"
+            android:paddingBottom="10dp"
+            android:clipChildren="false"
+            android:clipToPadding="false">
+
+            <TextClock
+                android:id="@+id/neoClockBack"
+                style="@style/NeoClock"
+                android:translationX="9dp"
+                android:translationY="9dp"
+                android:textColor="#FF141414"
+                android:importantForAccessibility="no" />
+
+            <TextClock
+                style="@style/NeoClock"
+                android:translationX="5dp"
+                android:translationY="5dp"
+                android:textColor="#FFFF3EA5"
+                android:importantForAccessibility="no" />
+
+            <TextClock
+                android:id="@+id/neoClockFront"
+                style="@style/NeoClock"
+                android:textColor="#FFFFF4E0" />
+        </FrameLayout>
+
+        <TextView
+            android:id="@+id/neoDate"
+            style="@style/NeoPill"
+            android:layout_marginStart="4dp"
+            android:layout_marginTop="4dp"
+            android:minHeight="40dp"
+            android:paddingStart="20dp"
+            android:paddingEnd="22dp"
+            android:rotation="-3"
+            android:textSize="20sp" />
+    </LinearLayout>
+
+    <TextView
+        android:id="@+id/neoClockWallpaper"
+        style="@style/NeoPill"
+        android:layout_gravity="bottom|end"
+        android:layout_marginEnd="48dp"
+        android:layout_marginBottom="44dp"
+        android:textSize="13sp" />
+</FrameLayout>

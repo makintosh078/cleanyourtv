@@ -640,6 +640,9 @@ final class Config {
         // An on-TV wallpaper pick overrides the theme: a filename from the wallpapers/
         // collection, or "none". Unset means the theme decides (off by default).
         String wallpaperChoice = choices.getString(WALLPAPER_CHOICE_KEY, null);
+        // neo_style picks from its own collection of colours and pictures (Neo).
+        String neoChoice = Neo.wallpaperChoice(ctx);
+        if (neoChoice != null) wallpaperChoice = neoChoice;
         List<File> chosen = WallpaperRotation.chosen(dir == null ? Collections.emptyList()
                 : WallpaperRotation.images(new File(dir, "wallpapers")), wallpaper, wallpaperChoice);
         if (chosen != null) {
@@ -738,6 +741,13 @@ final class Config {
         }
     }
 
+    /** The theme's config.json for keys read outside Config (Neo), or null when there is none. */
+    static JSONObject overlay(Context ctx) {
+        File dir = dir(ctx);
+        return readOverlay(ctx, dir != null ? new File(dir, FILE_NAME) : null,
+                Environment.MEDIA_MOUNTED.equals(Environment.getExternalStorageState()));
+    }
+
     /** Reads and parses the overlay; any problem means "no overlay", never a crash on the home screen. */
     /**
      * The overlay, or before external storage is mounted, the copy kept from the last time it was read. Home can
@@ -805,12 +815,12 @@ final class Config {
         return Collections.unmodifiableMap(groups);
     }
 
-    private static String string(JSONObject o, String key, String fallback) {
+    static String string(JSONObject o, String key, String fallback) {
         Object v = o.opt(key);
         return v instanceof String ? ((String) v).trim() : fallback;
     }
 
-    private static boolean bool(JSONObject o, String key, boolean fallback) {
+    static boolean bool(JSONObject o, String key, boolean fallback) {
         Object v = o.opt(key);
         return v instanceof Boolean ? (Boolean) v : fallback;
     }
@@ -860,7 +870,7 @@ final class Config {
         return out;
     }
 
-    private static List<String> stringList(JSONObject o, String key, List<String> fallback) {
+    static List<String> stringList(JSONObject o, String key, List<String> fallback) {
         Object v = o.opt(key);
         if (!(v instanceof JSONArray)) return fallback;
         JSONArray a = (JSONArray) v;

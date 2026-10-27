@@ -152,4 +152,23 @@
     <!-- Cinematic top shelf (cinematic_home): the line under the focused dock app's name; %1$s is when it was
          last opened, e.g. "5 minutes ago" or "yesterday, 9:40 pm". -->
     <string name="last_opened">Last opened %1$s</string>
+
+    <!-- neo_style (Neo): the card for the focused dock app, the VPN pill and the wallpaper pill on Home. -->
+    <string name="neo_open">Open</string>
+    <string name="neo_remove_from_dock">Remove from dock</string>
+    <string name="neo_press_ok">Press OK to open</string>
+    <string name="neo_app">App</string>
+    <string name="neo_vpn_connected">Connected</string>
+    <string name="neo_vpn_off">Off</string>
+    <!-- The pill at the bottom left of Home and the screensaver: the wallpaper's name, e.g. "Wallpaper: Sand". -->
+    <string name="neo_wallpaper_pill">Wallpaper: %1$s</string>
+    <!-- The Wallpapers screen. -->
+    <string name="neo_wallpapers">Wallpapers</string>
+    <string name="neo_collection">Collection</string>
+    <string name="neo_options">Options</string>
+    <string name="neo_daily">Change every day</string>
+    <string name="neo_as_screensaver">Show as screensaver</string>
+    <string name="neo_wallpaper_about">Background of Home and the screensaver, drawn as a colour.</string>
+    <string name="neo_picture_about">Background of Home and the screensaver, a picture from the theme (1920×1080).</string>
+    <string name="neo_picture">Picture from the theme</string>
 </resources>

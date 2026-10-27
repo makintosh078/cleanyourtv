@@ -475,6 +475,11 @@
          faint outer glow), rim (the crisp rim alone, no sheen, fill or glow, for a quiet focus over a wallpaper) or
          halo (the rim with a lighter outer glow). Can also be set with "glass_style": "rim" in a theme's config.json. -->
     <string name="glass_style" translatable="false">glass</string>
+    <!-- The neo-brutalist look (Neo): flat colour wallpapers, cream cards with a thick outline and a hard offset shadow,
+         coloured icon tiles, a big card for the focused dock app and the Wallpapers screen. Its colours and wallpapers
+         come from a theme ("neo_tile_colors", "neo_wallpapers", "neo_categories", "neo_avatar"). Can also be set with
+         "neo_style": true in a theme's config.json. -->
+    <bool name="neo_style">false</bool>
 
     <!-- Tiles drawn from the app's icon and name instead of its banner (for banners that crop badly). -->
     <string-array name="icon_tiles" translatable="false">

@@ -150,4 +150,20 @@
     <!-- Cinematic top shelf (cinematic_home): the line under the focused dock app's name; %1$s is when it was
          last opened, e.g. "5 minutes ago" or "yesterday, 9:40 pm". -->
     <string name="last_opened">Последний запуск: %1$s</string>
+
+    <string name="neo_open">Открыть</string>
+    <string name="neo_remove_from_dock">Убрать из дока</string>
+    <string name="neo_press_ok">Нажмите ОК, чтобы открыть</string>
+    <string name="neo_app">Приложение</string>
+    <string name="neo_vpn_connected">Подключено</string>
+    <string name="neo_vpn_off">Выключен</string>
+    <string name="neo_wallpaper_pill">Обои: %1$s</string>
+    <string name="neo_wallpapers">Обои</string>
+    <string name="neo_collection">Коллекция</string>
+    <string name="neo_options">Параметры</string>
+    <string name="neo_daily">Менять каждый день</string>
+    <string name="neo_as_screensaver">Показывать как заставку</string>
+    <string name="neo_wallpaper_about">Фон главного экрана и заставки. Рисуется цветом, без картинки.</string>
+    <string name="neo_picture_about">Фон главного экрана и заставки, картинка из темы (1920×1080).</string>
+    <string name="neo_picture">Картинка из темы</string>
 </resources>

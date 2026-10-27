@@ -1,0 +1,64 @@
+# Sber SDX-50U4139 50" (CVTE board TP.T962D4.PC756, Amlogic T962D4 "t5w", codename at30a6, panel LE50VA, 2 GB RAM, 8 GB eMMC), Russia
+# StarOS (Salute TV) on Android 13, build TP1A.220905.004.A2 (2026-06-17), user/release-keys
+# Based on examples/sber-salute-tv-at30a6 (same board and codename), adjusted to the owner's choices below.
+#
+# Apply:   TV_HOST=<tv ip> tools/disable.sh examples/sber-sdx-50u4139/debloat.txt
+# Undo:    TV_HOST=<tv ip> tools/restore.sh examples/sber-sdx-50u4139/debloat.txt ru.sberdevices.starlauncher
+# Everything is DISABLED, not uninstalled. Comment out any line you want to keep.
+#
+# Stock launcher: ru.sberdevices.starlauncher (STOCK_LAUNCHER=ru.sberdevices.starlauncher, as on at30a6).
+# Developer options open on this unit; ADB came up through Wireless debugging (adb pair, then adb tcpip 5555).
+#
+# Differences from at30a6, by the owner's choice:
+# - Firmware updates are DISABLED (ru.sberdevices.updater, ru.sberdevices.services.core), as on the at30a6 unit.
+# - The Sber catalogue stays enabled and is only hidden in the launcher: every app here was installed by
+#   ru.sberdevices.services, and removed system-app updates come back through the catalogue.
+# - MHshare and its ScreenShare platform stay: they are the AirPlay receiver the owner uses.
+#
+# Keep (as on at30a6): ru.sberdevices.services and ru.sberdevices.assistant (voice assistant),
+# ru.sberdevices.tvinputs (HDMI/AV), ru.sberdevices.app.starkeyboard (the only IME), ru.sberdevices.webview,
+# ru.sberdevices.systemui, com.android.systemui, ru.sberdevices.location.provider, ru.sberdevices.app.setup,
+# ru.sberdevices.settings, com.sberbank.settings, the ru.sberdevices.* overlays and resources, every
+# com.droidlogic.* and every com.cvte.* package (do not open them). Also kept for the owner: YouTube
+# (com.google.android.youtube.tv), Kinopoisk, Okko (ru.more.play), YummyTV, Happ, Yandex Browser, RUTUBE, VLC,
+# RuStore.
+
+# Sber content apps and preloads
+ru.sberdevices.music                         # Zvuk music; its update stays in /data while disabled
+ru.sberdevices.starlivetv                    # StarLiveTv, Sber's online channels
+ru.sberdevices.videos                        # "Видео" catalogue
+ru.sberdevices.sberplay                      # SberPlay games
+ru.sberdevices.subscriptions                 # SberPrime subscriptions
+ru.sberdevices.starkidsroom.prod             # "Детская комната" (kids room)
+ru.sberdevices.parentcontrol                 # parental control
+ru.sberdevices.starprofile                   # user profiles
+ru.sberdevices.smarthome.promo               # smart home promo
+com.salute.star                              # "Умный дом" smart home app
+ru.sberdevices.tv                            # "Настройка провайдеров", TV provider setup; HDMI unaffected
+ru.sberdevices.startube                      # Sber's own "YouTube" wrapper; the owner uses com.google.android.youtube.tv
+ru.sberdevices.starbrowser                   # Salute browser; the owner uses Yandex Browser
+# ru.sberdevices.starmarket                  # Sber app catalogue: kept, hidden in the launcher
+
+# Sber background services
+ru.sberdevices.survey                        # surveys
+ru.sberdevices.openbeta                      # beta programme
+ru.sberdevices.bugreporter                   # StarBugReporter
+ru.sberdevices.starcleaner                   # StarCleaner, the "Очистка памяти" screen
+ru.sberdevices.rcfupdater                    # remote control firmware updater
+ru.sberdevices.gamepad.service               # gamepad service stub
+
+# Screen sharing receivers other than AirPlay
+ru.sberdevices.huaweicast                    # Huawei Cast Plus
+com.cvte.dssshare.dlna                       # DLNA renderer (Jetty on a random port)
+# com.maxhub.screenshare.server.tv           # MHshare: kept, AirPlay receiver
+# com.screenshare.platform                   # ScreenShare platform for MHshare: kept
+
+# Firmware updates: disabled at the owner's request
+ru.sberdevices.updater                       # OTA updater
+ru.sberdevices.services.core                 # StarServicesCore, the updater core
+
+# Sber screensaver: point screensaver_components at com.gathin.tvhome/.ClockDream first, or it comes back
+ru.sberdevices.starscreensaver               # ~220 MB of cached artwork
+
+# Stock launcher, replaced by launcher/ (disable.sh skips it while it still owns Home)
+ru.sberdevices.starlauncher

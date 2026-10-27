@@ -107,7 +107,12 @@ public final class LauncherSettingsActivity extends Activity {
             reverseRow(dockChoices);
         }
         wallpaperChoice = findViewById(R.id.wallpaperChoice);
-        wallpaperChoice.setOnClickListener(v -> showWallpaperPicker());
+        // neo_style has its own Wallpapers screen: a colour collection, the daily change and the screensaver.
+        boolean neo = Neo.load(this).enabled;
+        wallpaperChoice.setOnClickListener(v -> {
+            if (neo) startActivity(new Intent(this, NeoWallpapersActivity.class));
+            else showWallpaperPicker();
+        });
         animationsChoice = findViewById(R.id.animationsChoice);
         animationsChoice.setOnClickListener(v -> {
             animations = !animations;
@@ -293,12 +298,20 @@ public final class LauncherSettingsActivity extends Activity {
         advancedChoice.setEnabled(animations);
         advancedChoice.setAlpha(animations ? 1f : 0.5f);
         String wallpaperCurrent = choices.getString(Config.WALLPAPER_CHOICE_KEY, null);
+        Neo neo = Neo.load(this);
+        if (neo.enabled) wallpaperCurrent = neo.current(this).name;   // what the Wallpapers screen shows
         wallpaperChoice.setText(getString(R.string.wallpaper_state,
                 "none".equals(wallpaperCurrent) ? getString(R.string.wallpaper_none)
                         : wallpaperCurrent != null ? wallpaperCurrent
                         : getString(R.string.wallpaper_theme_default)));
         openOnStartChoice.setText(getString(R.string.open_on_start_state, openOnStartLabel()));
         followThemeChoice.setSelected(!hasOnTvChoices());
+    }
+
+    @Override
+    protected void onResume() {
+        super.onResume();
+        refresh();   // back from the Wallpapers screen with another wallpaper
     }
 
     private boolean hasOnTvChoices() {
